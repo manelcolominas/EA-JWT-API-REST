@@ -4,14 +4,13 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node build/index.js"
+    "start": "npm run build && node dist/index.js"
   },
   "author": "Roc Meseguer",
   "devDependencies": {
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.11",
     "@types/jsonwebtoken": "^8.5.8",
-    "@types/mongoose": "^5.11.97",
     "@types/node": "^17.0.21",
     "typescript": "^5.9.3"
   },
