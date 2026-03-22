@@ -1,8 +1,8 @@
 import { Request, Response } from 'express'
 import jwt from "jsonwebtoken";
 import { userService } from '../services/user.service';
-import IJwtPayload from '../models/JWTPayload';
-import IUser from '../models/user.model';
+import { IJwtPayload } from '../models/JWTPayload';
+import { IUser } from '../models/user.model';
 
 const _SECRET: string = 'api+jwt';
 const _REFRESH_SECRET: string = 'refresh+jwt';

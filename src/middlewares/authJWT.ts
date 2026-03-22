@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from "jsonwebtoken";
 
-import User from '../models/user.model';
-import IJwtPayload from '../models/JWTPayload';
+import { IUser } from '../models/user.model';
+import { IJwtPayload } from '../models/JWTPayload';
+import { logger } from '../config';
 
 const _SECRET: string = 'api+jwt';
 const _REFRESH_SECRET: string = 'refresh+jwt';
@@ -23,7 +24,7 @@ export async function verifyToken (req: Request, res: Response, next: NextFuncti
 
     // Alternativas para pasar el id del usuario a la siguiente función
     // 1. Modificando el Type Request de Express
-    req.userId = decoded.id;
+    (req as Request).userId = decoded.id;
     // 2. Usando res.locals
     res.locals.UserId = decoded.id;
 
@@ -45,7 +46,7 @@ export async function isOwner (req: Request, res: Response, next: NextFunction) 
   try {
 
     // Cogemos el id del usuario del middleware anterior
-    const userIdRequest = req.userId;
+    const userIdRequest = (req as any).userId;
     const userIdResponseLocals = res.locals.UserId;
     
     const username = req.params.id;
@@ -55,7 +56,7 @@ export async function isOwner (req: Request, res: Response, next: NextFunction) 
     next();
 
   } catch (error) {
-    console.log(error)
+    logger.error(error)
     return res.status(500).send({ message: error });
   }
 };
@@ -73,7 +74,7 @@ export async function verifyRefreshToken(req: Request, res: Response, next: Next
             return res.status(401).json({ message: "Invalid token type - Refresh token required" });
         }
         
-        req.userId = decoded.id;
+        (req as any).userId = decoded.id;
         res.locals.UserId = decoded.id;
         
         next();

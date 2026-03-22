@@ -1,4 +1,4 @@
-import IUser from '../models/user.model';
+import { IUser } from '../models/user.model';
 
 class UserService {
     private users: IUser[] = [

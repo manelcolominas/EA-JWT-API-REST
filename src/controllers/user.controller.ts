@@ -1,10 +1,11 @@
 import { Request, Response } from 'express'
-import IUser from '../models/user.model';
+import { IUser } from '../models/user.model';
 import { userService } from '../services/user.service';
+import { logger } from '../config';
 
 export async function createUser(req: Request, res: Response): Promise<Response> {
     const { username, password } = req.body;
-    console.log('Creating user');
+    logger.info('Creating user');
 
     const newUser = { username, password } as IUser;
     const createdUser = await userService.create(newUser);
@@ -12,13 +13,15 @@ export async function createUser(req: Request, res: Response): Promise<Response>
 }
 
 export async function getUsers(req: Request, res: Response): Promise<Response> {
-    console.log('Get users');
+    logger.info('Getting users');
+
     const users = await userService.findAll();
     return res.json(users);
 }
 
 export async function getUser(req: Request, res: Response): Promise<Response> {
-    console.log('Get user');
+    logger.info('Getting user');
+
     const username = req.params.id;
     const user = await userService.findOne(username);
     
@@ -30,7 +33,8 @@ export async function getUser(req: Request, res: Response): Promise<Response> {
 }
 
 export async function deleteUser(req: Request, res: Response): Promise<Response> {
-    console.log('Delete user');
+    logger.info('Deleting user');
+
     const username = req.params.id;
     const deletedUser = await userService.delete(username);
     
@@ -42,7 +46,8 @@ export async function deleteUser(req: Request, res: Response): Promise<Response>
 }
 
 export async function updateUser(req: Request, res: Response): Promise<Response> {
-    console.log('Updating user');
+    logger.info('Updating user');
+    
     const username = req.params.id;
     const { password } = req.body;
 
