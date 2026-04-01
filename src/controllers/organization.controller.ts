@@ -1,5 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import mongoose from 'mongoose';
 import OrganizationService from '../services/organization.service';
 
 const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
@@ -58,7 +57,7 @@ const deleteOrganization = async (req: Request, res: Response, next: NextFunctio
 
 const getOrganizationWithUsers = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const organization = await OrganizationService.getOrganizationWithUsers(req.params.id);
+        const organization = await OrganizationService.getOrganizationWithUsers(req.params.organizationId);
         if (!organization) {
             return res.status(404).json({ message: 'Organization not found' });
         }

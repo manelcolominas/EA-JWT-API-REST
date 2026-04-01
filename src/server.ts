@@ -8,11 +8,11 @@ import logger from './library/logger';
 
 import { config } from './config/config';
 import { swaggerSpec } from './swagger';
-import { insertData } from './utils/dataSeeder';
+import { insertData } from './utils/dataSeeder.util';
 
-import authRoutes from './routes/auth';
-import userRoutes from './routes/user';
-import organizationRoutes from './routes/organization';
+import authRoutes from './routes/auth.route';
+import userRoutes from './routes/user.route';
+import organizationRoutes from './routes/organization.route';
 
 const app: Express = express(); // Explicitly type as Express
 
@@ -35,7 +35,7 @@ const StartServer = () => {
     app.use(express.urlencoded({ extended: true }) as express.RequestHandler);
     //app.use(cors() as express.RequestHandler);
     app.use(cors({
-        origin: process.env.CLIENT_URL || 'http://localhost:3000',
+        origin: process.env.CLIENT_URL || 'http://localhost:4200',
         credentials: true
     }));
     app.use(cookieParser());

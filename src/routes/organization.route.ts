@@ -1,7 +1,7 @@
 import express from 'express';
 import controller from '../controllers/organization.controller';
-import { verifyToken, isOwner } from '../middleware/auth'; 
-import { Schemas, ValidateJoi } from '../middleware/joi';
+import { verifyToken, isOwner } from '../middleware/auth.middleware'; 
+import { Schemas, ValidateJoi } from '../middleware/joi.middleware';
 
 const router = express.Router();
 
@@ -63,7 +63,7 @@ router.post('/', [verifyToken], ValidateJoi(Schemas.organization.create), contro
 
 /**
  * @openapi
- * /organizations/{id}/users:
+ * /organizations/{organizationId}/full:
  *   get:
  *     summary: Gets a single organization with populated users
  *     security:
@@ -71,7 +71,7 @@ router.post('/', [verifyToken], ValidateJoi(Schemas.organization.create), contro
  *     tags: [Organizations]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: organizationId
  *         required: true
  *         schema:
  *           type: string
@@ -86,7 +86,7 @@ router.post('/', [verifyToken], ValidateJoi(Schemas.organization.create), contro
  *       404:
  *         description: Organization not found
  */
-router.get('/:id/users', [verifyToken], controller.getOrganizationWithUsers);
+router.get('/:organizationId/full', [verifyToken], controller.getOrganizationWithUsers);
 
 /**
  * @openapi

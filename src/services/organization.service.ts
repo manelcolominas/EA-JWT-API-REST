@@ -48,6 +48,12 @@ const getOrganizationWithUsers = async (organizationId: string): Promise<IOrgani
 };
 
 const removeUserFromOrganization = async (organizationId: string, userId: string): Promise<IOrganization | null> => {
+    const organization = await OrganizationModel.findById(organizationId);
+    if (!organization) return null;
+
+    const isMember = organization.users.some((id) => id.toString() === userId);
+    if (!isMember) throw new Error('USER_NOT_IN_ORG');
+
     return await OrganizationModel.findByIdAndUpdate(
         organizationId,
         { $pull: { users: userId } },

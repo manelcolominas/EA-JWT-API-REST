@@ -3,7 +3,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0d2",
     "name": "Alice Martin",
     "email": "alice@acmecorp.com",
-    "password": "password1",
+    "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0d1",
     "createdAt": "2024-03-01T09:00:00.000Z",
     "updatedAt": "2024-03-10T14:30:00.000Z"
@@ -12,7 +13,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0d3",
     "name": "Bob Chen",
     "email": "bob@acmecorp.com",
-    "password": "password2",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0d1",
     "createdAt": "2024-03-02T10:15:00.000Z",
     "updatedAt": "2024-03-11T08:45:00.000Z"
@@ -21,7 +23,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0e2",
     "name": "Sandra Lee",
     "email": "sandra@globexsolutions.com",
-    "password": "password3",
+    "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
     "createdAt": "2024-02-14T08:00:00.000Z",
     "updatedAt": "2024-03-01T12:00:00.000Z"
@@ -30,7 +33,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0e3",
     "name": "James Patel",
     "email": "james@globexsolutions.com",
-    "password": "password4",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
     "createdAt": "2024-02-20T09:30:00.000Z",
     "updatedAt": "2024-03-05T11:15:00.000Z"
@@ -39,7 +43,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0e4",
     "name": "Nina Rossi",
     "email": "nina@globexsolutions.com",
-    "password": "password5",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
     "createdAt": "2024-03-01T07:45:00.000Z",
     "updatedAt": "2024-03-12T10:00:00.000Z"
@@ -48,7 +53,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0f2",
     "name": "Peter Gibbons",
     "email": "peter@initech.com",
-    "password": "password6",
+    "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0f1",
     "createdAt": "2024-01-10T10:00:00.000Z",
     "updatedAt": "2024-02-28T09:00:00.000Z"
@@ -57,7 +63,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0a2",
     "name": "Victor Reyes",
     "email": "victor@umbrella-tech.com",
-    "password": "password7",
+    "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
     "createdAt": "2024-01-15T11:00:00.000Z",
     "updatedAt": "2024-03-08T13:30:00.000Z"
@@ -66,7 +73,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0a3",
     "name": "Laura Kim",
     "email": "laura@umbrella-tech.com",
-    "password": "password8",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
     "createdAt": "2024-01-20T14:00:00.000Z",
     "updatedAt": "2024-03-09T15:00:00.000Z"
@@ -75,7 +83,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0a4",
     "name": "Marcus Webb",
     "email": "marcus@umbrella-tech.com",
-    "password": "password9",
+    "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
     "createdAt": "2024-02-01T08:30:00.000Z",
     "updatedAt": "2024-03-10T09:45:00.000Z"
@@ -84,7 +93,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0a5",
     "name": "Diane Moreau",
     "email": "diane@umbrella-tech.com",
-    "password": "password10",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
     "createdAt": "2024-02-10T10:00:00.000Z",
     "updatedAt": "2024-03-11T16:00:00.000Z"
@@ -93,7 +103,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0b2",
     "name": "Tony Stark",
     "email": "tony@starkindustries.com",
-    "password": "password11",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
     "createdAt": "2024-01-05T09:00:00.000Z",
     "updatedAt": "2024-03-12T18:00:00.000Z"
@@ -102,7 +113,8 @@
     "_id": "64a1f2b3c4e5d6f7a8b9c0b3",
     "name": "Pepper Potts",
     "email": "pepper@starkindustries.com",
-    "password": "password12",
+    "password": "password123",
+    "role": "user",
     "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
     "createdAt": "2024-01-06T09:30:00.000Z",
     "updatedAt": "2024-03-13T17:00:00.000Z"
@@ -112,6 +124,7 @@
     "name": "Manel Colominas",
     "email": "manel@starkindustries.com",
     "password": "password123",
+    "role": "admin",
     "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
     "createdAt": "2024-01-06T09:30:00.000Z",
     "updatedAt": "2024-03-13T17:00:00.000Z"

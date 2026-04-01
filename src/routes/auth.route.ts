@@ -2,7 +2,7 @@ import { Router } from "express";
 const router = Router();
 
 import * as authCtrl from "../controllers/auth.controller";
-import { verifyRefreshToken, verifyToken } from "../middleware/auth";
+import { verifyRefreshToken, verifyToken } from "../middleware/auth.middleware";
 
 /**
  * @swagger
@@ -50,8 +50,10 @@ router.post("/signup", authCtrl.signup);
  *             properties:
  *               email:
  *                 type: string
+ *                 example: "manel@starkindustries.com"
  *               password:
  *                 type: string
+ *                 example: "password123"
  *     responses:
  *       200:
  *         description: Login successful, returns accessToken
