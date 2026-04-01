@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "name": "Acme Corp",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0d2",
+      "64a1f2b3c4e5d6f7a8b9c0d3"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "name": "Globex Solutions",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0e2",
+      "64a1f2b3c4e5d6f7a8b9c0e3",
+      "64a1f2b3c4e5d6f7a8b9c0e4"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "name": "Initech Ventures",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0f2"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "name": "Umbrella Technologies",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0a2",
+      "64a1f2b3c4e5d6f7a8b9c0a3",
+      "64a1f2b3c4e5d6f7a8b9c0a4",
+      "64a1f2b3c4e5d6f7a8b9c0a5"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "name": "Stark Industries",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0b2",
+      "64a1f2b3c4e5d6f7a8b9c0b3"
+    ]
+  }
+]

@@ -1,107 +1,107 @@
-import { Request, Response } from 'express'
-import jwt from "jsonwebtoken";
-import { userService } from '../services/user.service';
-import { IJwtPayload } from '../models/JWTPayload';
-import { IUser } from '../models/user.model';
+import { Request, Response, NextFunction } from 'express';
+import { config } from '../config/config';
+import userService from '../services/user.service';
+import * as authService from '../services/auth';
+import {UserModel} from '../models/user.model';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
+import { AuthRequest } from '../models/AuthRequest';
 
-const _SECRET: string = 'api+jwt';
-const _REFRESH_SECRET: string = 'refresh+jwt';
 
-function generateAccessToken(username: string): string {
-    const session = { id: username, type: 'access' } as IJwtPayload;
-    return jwt.sign(session, _SECRET, {
-        expiresIn: '15m', // access token dura 15 minutos
-    });
-}
+export const signup = async (req: Request, res: Response) => {
+    const { name, email, password, organization } = req.body;
 
-function generateRefreshToken(username: string): string {
-    const session = { id: username, type: 'refresh' } as IJwtPayload;
-    return jwt.sign(session, _REFRESH_SECRET, {
-        expiresIn: '7d', // refresh token dura 7 días
-    });
-}
-
-export async function signup(req: Request, res: Response): Promise<Response> {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-    }
-
-    // Check if user already exists
-    const existingUser = await userService.findOne(username);
-    if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-    }
-
-    // Create new user
-    const newUser = { username, password } as IUser;
-    const createdUser = await userService.create(newUser);
-
-    // Generate tokens
-    const accessToken = generateAccessToken(username);
-    const refreshToken = generateRefreshToken(username);
-
-    return res.status(201).json({
-        user: createdUser,
-        accessToken,
-        refreshToken
-    });
-}
-
-export async function signin(req: Request, res: Response): Promise<Response> {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-    }
-
-    const user = await userService.findOne(username);
-    
-    if (!user) {
-        return res.status(400).json({ message: "User Not Found" });
-    }
-
-    if (user.password !== password) {
-        return res.status(401).json({ message: "Invalid Password" });
-    }
-
-    // Generate tokens
-    const accessToken = generateAccessToken(username);
-    const refreshToken = generateRefreshToken(username);
-    
-    return res.json({
-        accessToken,
-        refreshToken
-    });
-}
-
-export async function refresh(req: Request, res: Response): Promise<Response> {
-    const authHeader = req.headers['authorization'];
-    const refreshToken = authHeader && authHeader.split(' ')[1];
-
-    if (!refreshToken) {
-        return res.status(401).json({ message: "Refresh token not provided" });
+    if (!name || !email || !password || !organization) {
+        return res.status(400).json({ message: "All fields are required" });
     }
 
     try {
-        const decoded = jwt.verify(refreshToken, _REFRESH_SECRET) as IJwtPayload;
+        const newUser = await userService.createUser({ name, email, password, organization });
+
+        const accessToken = generateAccessToken(String(newUser._id), newUser.name, newUser.email, newUser.organization );
+        const refreshToken = generateRefreshToken(String(newUser._id), newUser.name, newUser.email, newUser.organization );
+
+        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+
+        return res.status(201).json({ user: newUser, accessToken });
+    } catch (error: any) {
+        if (error.message === 'Email already in use') {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await authService.validateUserCredentials(email, password);
         
-        if (decoded.type !== 'refresh') {
-            return res.status(401).json({ message: "Invalid token type" });
+        if (!user) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
         }
 
-        // Verify user exists
-        const user = await userService.findOne(decoded.id);
+        const { accessToken, refreshToken } = authService.getTokens(user);
+
+        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+
+        return res.status(200).json({
+            message: 'Succesfull login',
+            accessToken,
+            usuario: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                organization: user.organization
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const refresh = async (req: Request, res: Response) => {
+    // userId is already verified and set by verifyRefreshToken middleware
+    const userId = (req as any).userId;
+
+    try {
+        const user = await UserModel.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Generate new access token
-        const accessToken = generateAccessToken(decoded.id);
-        
+        const accessToken = generateAccessToken(
+            String(user._id),
+            user.name,
+            user.email,
+            user.organization
+        );
         return res.json({ accessToken });
     } catch (error) {
-        return res.status(401).json({ message: "Invalid refresh token" });
+        return res.status(500).json({ message: "Internal server error" });
     }
 }
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        res.clearCookie(config.cookies.refreshName, {
+            ...config.cookies.options
+        });
+
+        return res.status(200).json({ message: 'Succesfull logout' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const getMe = async (req: AuthRequest, res: Response) => {
+    try {
+        const user = await UserModel.findById(req.userId).populate('organization');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};

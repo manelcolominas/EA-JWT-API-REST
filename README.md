@@ -10,19 +10,28 @@ Este proyecto implementa una API REST con autenticación JWT usando Express y Ty
 │   │   ├── auth.controller.ts    # Controladores de autenticación
 │   │   └── user.controller.ts    # Controladores de usuarios
 │   ├── middlewares/
+│   │   ├── joi.ts   # Middlewares de autenticación
 │   │   └── authJWT.ts           # Middlewares de autenticación y autorización
 │   ├── models/
 │   │   ├── JWTPayload.ts        # Interface para payload JWT
-│   │   └── User.ts              # Interface de Usuario
+│   │   ├── auth.model.ts        # Interface de autenticación
+│   │   ├── organitzation.model.ts        # Interface de organización
+│   │   └── user.model.ts        # Interface de Usuario
 │   ├── routes/
 │   │   ├── auth.ts              # Rutas de autenticación
+│   │   ├── organization.ts      # Rutas de organización
 │   │   └── user.ts              # Rutas de usuarios
 │   ├── services/
+│   │   ├── organitzation.service.ts # Servicio de organización
 │   │   └── user.service.ts      # Servicio de usuarios
+│   ├── config/
+│   │   └── config.ts            
+│   ├── utils/
+│   │   └── dataSeeder.ts 
 │   ├── app.ts                   # Configuración de Express
+│   ├── server.ts                
+│   ├── swagger.ts               # Configuración de Swagger
 │   └── index.ts                 # Punto de entrada
-├── @types/
-│   └── express/                 # Extensiones de tipos para Express
 ├── test/
 │   └── api.http                # Tests de API con REST Client
 └── package.json

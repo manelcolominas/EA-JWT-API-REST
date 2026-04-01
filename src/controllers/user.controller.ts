@@ -1,61 +1,52 @@
-import { Request, Response } from 'express'
-import { IUser } from '../models/user.model';
-import { userService } from '../services/user.service';
-import { logger } from '../config';
+import { Request, Response } from 'express';
+import userService from '../services/user.service';
+import logger from '../library/logger';
 
-export async function createUser(req: Request, res: Response): Promise<Response> {
-    const { username, password } = req.body;
+const createUser = async (req: Request, res: Response)  => {
     logger.info('Creating user');
-
-    const newUser = { username, password } as IUser;
-    const createdUser = await userService.create(newUser);
-    return res.json(createdUser);
+    try {
+        const createdUser = await userService.createUser(req.body);
+        return res.status(201).json(createdUser);
+    } 
+    catch (error: any) {
+        if (error.message === 'Email already in use') {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
 }
 
-export async function getUsers(req: Request, res: Response): Promise<Response> {
-    logger.info('Getting users');
-
-    const users = await userService.findAll();
-    return res.json(users);
-}
-
-export async function getUser(req: Request, res: Response): Promise<Response> {
+const readUser = async (req: Request, res: Response) => {
     logger.info('Getting user');
-
-    const username = req.params.id;
-    const user = await userService.findOne(username);
-    
+    const user = await userService.getUser(req.params.userId);
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
-    
     return res.json(user);
 }
 
-export async function deleteUser(req: Request, res: Response): Promise<Response> {
-    logger.info('Deleting user');
-
-    const username = req.params.id;
-    const deletedUser = await userService.delete(username);
-    
-    if (!deletedUser) {
-        return res.status(404).json({ message: "User not found" });
-    }
-    
-    return res.json(deletedUser);
+const readAll = async (req: Request, res: Response) => {
+    logger.info('Getting all users');
+    const users = await userService.getAllUsers();
+    return res.json(users);
 }
 
-export async function updateUser(req: Request, res: Response): Promise<Response> {
+const updateUser = async (req: Request, res: Response) => {
     logger.info('Updating user');
-    
-    const username = req.params.id;
-    const { password } = req.body;
-
-    const updatedUser = await userService.update(username, { username, password } as IUser);
-    
-    if (!updatedUser) {
+    const updated = await userService.updateUser(req.params.userId, req.body);
+    if (!updated) {
         return res.status(404).json({ message: "User not found" });
     }
-    
-    return res.json(updatedUser);
+    return res.json(updated);
 }
+
+const deleteUser = async (req: Request, res: Response) => {
+    logger.info('Deleting user');
+    const deleted = await userService.deleteUser(req.params.userId);
+    if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    return res.json(deleted);
+}
+
+export default { createUser, readUser, readAll, updateUser, deleteUser };

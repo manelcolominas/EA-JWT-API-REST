@@ -1,43 +1,65 @@
-import { IUser } from '../models/user.model';
+import mongoose from 'mongoose';
+import { UserModel, IUser } from '../models/user.model';
+import { OrganizationModel } from '../models/organization.model';
 
-class UserService {
-    private users: IUser[] = [
-        { username: "user1", password: 'password1' },
-        { username: "user2", password: 'password2' },
-        { username: "user3", password: 'password3' }
-    ];
+const createUser = async (data: Partial<IUser>): Promise<IUser> => {
+    const user = new UserModel({
+        _id: new mongoose.Types.ObjectId(),
+        ...data
+    });
+    const savedUser = await user.save();
 
-    async findAll(): Promise<IUser[]> {
-        return this.users;
-    }
+    // Afegir l'usuari a l'organització
+    await OrganizationModel.findByIdAndUpdate(
+        savedUser.organization,
+        { $addToSet: { users: savedUser._id } }
+    );
 
-    async findOne(username: string): Promise<IUser | undefined> {
-        return this.users.find(user => user.username === username);
-    }
+    return savedUser;
+};
 
-    async create(user: IUser): Promise<IUser> {
-        this.users.push(user);
-        return user;
-    }
+const getUser = async (userId: string): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId).populate('organization', 'name');
+    return user;
+};
 
-    async update(username: string, updatedUser: IUser): Promise<IUser | undefined> {
-        const index = this.users.findIndex(user => user.username === username);
-        if (index !== -1) {
-            this.users[index] = { ...this.users[index], ...updatedUser };
-            return this.users[index];
+const getAllUsers = async (): Promise<IUser[]> => {
+    const users = await UserModel.find().populate('organization', 'name');
+    return users;
+};
+
+const updateUser = async (userId: string, data: Partial<IUser>): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId);
+    if (user) {
+        // Si l'organització canvia, actualitzar les llistes d'usuaris a les organitzacions
+        if (data.organization && data.organization.toString() !== user.organization.toString()) {
+            // Eliminar de l'antiga organització
+            await OrganizationModel.findByIdAndUpdate(user.organization, {
+                $pull: { users: user._id }
+            });
+
+            // Afegir a la nova organització
+            await OrganizationModel.findByIdAndUpdate(data.organization, {
+                $addToSet: { users: user._id }
+            });
         }
-        return undefined;
-    }
 
-    async delete(username: string): Promise<IUser | undefined> {
-        const index = this.users.findIndex(user => user.username === username);
-        if (index !== -1) {
-            const deletedUser = this.users[index];
-            this.users.splice(index, 1);
-            return deletedUser;
-        }
-        return undefined;
+        user.set(data);
+        return await user.save();
     }
-}
+    return null;
+};
 
-export const userService = new UserService();
+// user.service.ts - update deleteUser function
+const deleteUser = async (userId: string): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId);
+    if (user) {
+        // Remove user from organization's users array
+        await OrganizationModel.findByIdAndUpdate(user.organization, {
+            $pull: { users: user._id }
+        });
+    }
+    return await UserModel.findByIdAndDelete(userId);
+};
+
+export default { createUser, getUser, getAllUsers, updateUser, deleteUser };
