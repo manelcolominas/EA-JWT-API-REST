@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import controller from '../controllers/user.controller';
-import { verifyToken, isOwner, requireRole } from '../middleware/auth.middleware';
+import { verifyToken, isOwner, requireRole, isOwnerOrAdmin } from '../middleware/auth.middleware';
 import { ValidateJoi, Schemas } from '../middleware/joi.middleware';
 
 const router = Router();
@@ -73,6 +73,7 @@ const router = Router();
  *         description: Validation failed
  */
 router.post('/', [verifyToken, requireRole('admin')], ValidateJoi(Schemas.user.create), controller.createUser );
+
 /**
  * @openapi
  * /users:
@@ -107,7 +108,7 @@ router.get('/', [verifyToken, requireRole('admin')], controller.readAll);
  *       404:
  *         description: Not found
  */
-router.get('/:userId', [verifyToken], controller.readUser);
+router.get('/:userId', [verifyToken, isOwnerOrAdmin], controller.readUser);
 
 /**
  * @openapi
@@ -139,7 +140,7 @@ router.get('/:userId', [verifyToken], controller.readUser);
  *       422:
  *         description: Validation failed
  */
-router.put('/:userId', [verifyToken, isOwner], ValidateJoi(Schemas.user.update),  controller.updateUser );
+router.put('/:userId', [verifyToken, isOwnerOrAdmin], ValidateJoi(Schemas.user.update),  controller.updateUser );
 
 /**
  * @openapi
@@ -163,6 +164,6 @@ router.put('/:userId', [verifyToken, isOwner], ValidateJoi(Schemas.user.update),
  *       404:
  *         description: Not found
  */
-router.delete('/:userId', [verifyToken, isOwner], controller.deleteUser );
+router.delete('/:userId', [verifyToken, isOwnerOrAdmin], controller.deleteUser );
 
 export default router;

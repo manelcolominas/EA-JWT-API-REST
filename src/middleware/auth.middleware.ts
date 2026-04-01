@@ -18,6 +18,7 @@ export async function verifyToken(req: Request, res: Response, next: NextFunctio
 
         (req as any).userId = decoded.id;
         (req as any).userRole = decoded.role;
+        (req as any).organization = decoded.organization;
         res.locals.UserId = decoded.id;
 
         next();
@@ -35,7 +36,20 @@ export async function isOwner(req: Request, res: Response, next: NextFunction) {
             return res.status(403).json({ message: "Not Owner" });
 
         next();
-    } catch (error) {
+    } 
+    catch (error) {
+        return res.status(500).json({ message: error });
+    }
+}
+
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+        const role = (req as any).userRole;
+        if (role !== 'admin')
+            return res.status(403).json({ message: 'Admin access required' });
+        next();
+    }
+    catch (error) {
         return res.status(500).json({ message: error });
     }
 }
@@ -57,7 +71,8 @@ export async function verifyRefreshToken(req: Request, res: Response, next: Next
         res.locals.UserId = decoded.id;
 
         next();
-    } catch (error) {
+    } 
+    catch (error) {
         return res.status(401).json({ message: "Invalid refresh token" });
     }
 }
@@ -76,4 +91,38 @@ export function requireRole(...roles: string[]) {
         }
         next();
     };
+}
+
+export function isOwnerOrAdmin(req: Request, res: Response, next: NextFunction) {
+    const userIdFromToken = (req as any).userId;
+    const userRole = (req as any).userRole;
+    const userIdParam = req.params.userId;
+
+    if (userRole === 'admin') {
+        return next();
+    }
+
+    if (userIdFromToken === userIdParam) {
+        return next();
+    }
+
+    return res.status(403).json({ message: "Forbidden: not owner or admin" });
+}
+
+export function isOrgMember(req: Request, res: Response, next: NextFunction) {
+    const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization;
+    const orgId = req.params.organizationId;
+
+    if (userRole === 'admin') {
+        return next();
+    }
+
+    if (userOrg && String(userOrg) === String(orgId)) {
+        return next();
+    }
+
+    return res.status(403).json({
+        message: 'Forbidden: not a member of this organization'
+    });
 }

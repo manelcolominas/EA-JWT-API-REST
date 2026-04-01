@@ -1,6 +1,6 @@
 import express from 'express';
 import controller from '../controllers/organization.controller';
-import { verifyToken, isOwner } from '../middleware/auth.middleware'; 
+import { verifyToken, isOwner, isAdmin, isOrgMember } from '../middleware/auth.middleware'; 
 import { Schemas, ValidateJoi } from '../middleware/joi.middleware';
 
 const router = express.Router();
@@ -59,7 +59,7 @@ const router = express.Router();
  *       422:
  *         description: Validation failed (Joi)
  */
-router.post('/', [verifyToken], ValidateJoi(Schemas.organization.create), controller.createOrganization);
+router.post('/', [verifyToken, isAdmin], ValidateJoi(Schemas.organization.create), controller.createOrganization);
 
 /**
  * @openapi
@@ -86,7 +86,7 @@ router.post('/', [verifyToken], ValidateJoi(Schemas.organization.create), contro
  *       404:
  *         description: Organization not found
  */
-router.get('/:organizationId/full', [verifyToken], controller.getOrganizationWithUsers);
+router.get('/:organizationId/full', [verifyToken, isOrgMember], controller.getOrganizationWithUsers);
 
 /**
  * @openapi
@@ -113,7 +113,7 @@ router.get('/:organizationId/full', [verifyToken], controller.getOrganizationWit
  *       404:
  *         description: Not found
  */
-router.get('/:organizationId', [verifyToken], controller.readOrganization);
+router.get('/:organizationId', [verifyToken, isOrgMember], controller.readOrganization);
 
 /**
  * @openapi
