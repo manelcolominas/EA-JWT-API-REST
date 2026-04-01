@@ -28,6 +28,7 @@ export const Schemas = {
             name: Joi.string().required(),
             email: Joi.string().email().required(),
             password: Joi.string().min(6).required(),
+            role: Joi.string().valid('user', 'admin').required(),
             organization: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
         }),
         update: Joi.object<IUser>({

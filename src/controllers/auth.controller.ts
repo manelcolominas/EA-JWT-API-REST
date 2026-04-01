@@ -16,12 +16,26 @@ export const signup = async (req: Request, res: Response) => {
     try {
         const newUser = await userService.createUser({ name, email, password, organization, role });
 
-        const accessToken  = generateAccessToken(String(newUser._id), newUser.name, newUser.email, newUser.role, newUser.organization);
-        const refreshToken = generateRefreshToken(String(newUser._id), newUser.name, newUser.email, newUser.role, newUser.organization);
+        const populatedUser = await UserModel.findById(newUser._id).populate('organization', 'name');
+
+        const accessToken = generateAccessToken(
+            String(newUser._id), 
+            newUser.name, 
+            newUser.email, 
+            newUser.role, 
+            newUser.organization
+        );
+        const refreshToken = generateRefreshToken(
+            String(newUser._id), 
+            newUser.name, 
+            newUser.email, 
+            newUser.role, 
+            newUser.organization
+        );
 
         res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
 
-        return res.status(201).json({ user: newUser, accessToken });
+        return res.status(201).json({ user: populatedUser, accessToken });
     } catch (error: any) {
         if (error.message === 'Email already in use') {
             return res.status(400).json({ message: error.message });
@@ -91,9 +105,10 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
     }
 };
 
-export const getMe = async (req: AuthRequest, res: Response) => {
+export const getMe = async (req: Request, res: Response) => {
+    const authReq = req as AuthRequest; // <-- cast to AuthRequest
     try {
-        const user = await UserModel.findById(req.userId).populate('organization', 'name');
+        const user = await UserModel.findById(authReq.userId).populate('organization', 'name');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }

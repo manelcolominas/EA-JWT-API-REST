@@ -1,0 +1,1692 @@
+
+
+==================== src/config/config.ts ====================
+
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+// MongoDB
+export const MONGO_URL = process.env.MONGO_URI || '';
+
+// Server
+export const SERVER_PORT = process.env.SERVER_PORT ? Number(process.env.SERVER_PORT) : 1337;
+
+export const config = {
+    mongo: {
+        url: MONGO_URL
+    },
+    server: {
+        port: SERVER_PORT
+    },
+    jwt: {
+        accessSecret: process.env.JWT_SECRET || 'cce788eebd26d18a40e2f414c69692bb9bdedd9fc3438d92e52915359abe8d59',
+        refreshSecret: process.env.JWT_REFRESH_SECRET || '9a23ae4899d12aa77c66240a3b4a058f935e3634d06a72a4311e7d290274c121',
+        accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
+        refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+    },
+    cookies: {
+        refreshName: 'refreshToken',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
+        options: {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' as const,
+            path: '/'
+        }
+    }
+};
+
+
+
+==================== src/controllers/auth.controller.ts ====================
+
+import { Request, Response, NextFunction } from 'express';
+import { config } from '../config/config';
+import userService from '../services/user.service';
+import * as authService from '../services/auth.service';
+import { UserModel } from '../models/user.model';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
+import { AuthRequest } from '../models/AuthRequest';
+
+export const signup = async (req: Request, res: Response) => {
+    const { name, email, password, organization, role } = req.body;
+
+    if (!name || !email || !password || !organization) {
+        return res.status(400).json({ message: "All fields are required" });
+    }
+
+    try {
+        const newUser = await userService.createUser({ name, email, password, organization, role });
+
+        const populatedUser = await UserModel.findById(newUser._id).populate('organization', 'name');
+
+        const accessToken = generateAccessToken(
+            String(newUser._id), 
+            newUser.name, 
+            newUser.email, 
+            newUser.role, 
+            newUser.organization
+        );
+        const refreshToken = generateRefreshToken(
+            String(newUser._id), 
+            newUser.name, 
+            newUser.email, 
+            newUser.role, 
+            newUser.organization
+        );
+
+        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+
+        return res.status(201).json({ user: populatedUser, accessToken });
+    } catch (error: any) {
+        if (error.message === 'Email already in use') {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await authService.validateUserCredentials(email, password);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
+        }
+
+        const { accessToken, refreshToken } = authService.getTokens(user);
+
+        res.cookie(config.cookies.refreshName, refreshToken, config.cookies.options);
+
+        return res.status(200).json({
+            message: 'Succesfull login',
+            accessToken,
+            usuario: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                organization: user.organization
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const refresh = async (req: Request, res: Response) => {
+    const userId = (req as any).userId;
+
+    try {
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const accessToken = generateAccessToken(
+            String(user._id),
+            user.name,
+            user.email,
+            user.role,
+            user.organization
+        );
+        return res.json({ accessToken });
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        res.clearCookie(config.cookies.refreshName, { ...config.cookies.options });
+        return res.status(200).json({ message: 'Succesfull logout' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export const getMe = async (req: Request, res: Response) => {
+    const authReq = req as AuthRequest; // <-- cast to AuthRequest
+    try {
+        const user = await UserModel.findById(authReq.userId).populate('organization', 'name');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        return res.status(200).json(user);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+
+
+==================== src/controllers/organization.controller.ts ====================
+
+import { NextFunction, Request, Response } from 'express';
+import OrganizationService from '../services/organization.service';
+
+const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const savedOrganization = await OrganizationService.createOrganization(req.body);
+        return res.status(201).json(savedOrganization);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const readOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const organization = await OrganizationService.getOrganization(req.params.organizationId);
+        return organization ? res.status(200).json(organization) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const readAll = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const organizations = await OrganizationService.getAllOrganizations();
+        return res.status(200).json(organizations);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const updateOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = req.params.organizationId;
+
+    try {
+        const organization = await OrganizationService.updateOrganization(organizationId, req.body);
+        return organization ? res.status(200).json(organization) : res.status(404).json({ message: 'not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+// organization.controller.ts
+const deleteOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    const organizationId = req.params.organizationId;
+
+    try {
+        const organization = await OrganizationService.deleteOrganization(organizationId);
+        return organization ? res.status(200).json(organization) : res.status(404).json({ message: 'not found' });
+    } 
+    catch (error: any) {
+        if (error.message.includes('Cannot delete organization')) {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ error });
+    }
+};
+
+const getOrganizationWithUsers = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const organization = await OrganizationService.getOrganizationWithUsers(req.params.organizationId);
+        if (!organization) {
+            return res.status(404).json({ message: 'Organization not found' });
+        }
+        return res.status(200).json(organization);
+    }
+    catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+const removeUserFromOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    const { organizationId, userId } = req.params;
+
+    try {
+        const organization = await OrganizationService.removeUserFromOrganization(organizationId, userId);
+        return organization ? res.status(200).json(organization) : res.status(404).json({ message: 'Organization not found' });
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { createOrganization, readOrganization, readAll, updateOrganization, deleteOrganization, getOrganizationWithUsers, removeUserFromOrganization };
+
+
+
+==================== src/controllers/user.controller.ts ====================
+
+import { Request, Response } from 'express';
+import userService from '../services/user.service';
+import logger from '../library/logger';
+
+const createUser = async (req: Request, res: Response)  => {
+    logger.info('Creating user');
+    try {
+        const createdUser = await userService.createUser(req.body);
+        return res.status(201).json(createdUser);
+    } 
+    catch (error: any) {
+        if (error.message === 'Email already in use') {
+            return res.status(400).json({ message: error.message });
+        }
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+const readUser = async (req: Request, res: Response) => {
+    logger.info('Getting user');
+    const user = await userService.getUser(req.params.userId);
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    return res.json(user);
+}
+
+const readAll = async (req: Request, res: Response) => {
+    logger.info('Getting all users');
+    const users = await userService.getAllUsers();
+    return res.json(users);
+}
+
+const updateUser = async (req: Request, res: Response) => {
+    logger.info('Updating user');
+    const updated = await userService.updateUser(req.params.userId, req.body);
+    if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    return res.json(updated);
+}
+
+const deleteUser = async (req: Request, res: Response) => {
+    logger.info('Deleting user');
+    const deleted = await userService.deleteUser(req.params.userId);
+    if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+    }
+    return res.json(deleted);
+}
+
+export default { createUser, readUser, readAll, updateUser, deleteUser };
+
+
+
+
+==================== src/data/organizations.json ====================
+
+[
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "name": "Acme Corp",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0d2",
+      "64a1f2b3c4e5d6f7a8b9c0d3"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "name": "Globex Solutions",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0e2",
+      "64a1f2b3c4e5d6f7a8b9c0e3",
+      "64a1f2b3c4e5d6f7a8b9c0e4"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "name": "Initech Ventures",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0f2"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "name": "Umbrella Technologies",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0a2",
+      "64a1f2b3c4e5d6f7a8b9c0a3",
+      "64a1f2b3c4e5d6f7a8b9c0a4",
+      "64a1f2b3c4e5d6f7a8b9c0a5"
+    ]
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "name": "Stark Industries",
+    "users": [
+      "64a1f2b3c4e5d6f7a8b9c0b2",
+      "64a1f2b3c4e5d6f7a8b9c0b3"
+    ]
+  }
+]
+
+
+
+
+==================== src/data/users.json ====================
+
+[
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0d2",
+    "name": "Alice Martin",
+    "email": "alice@acmecorp.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "createdAt": "2024-03-01T09:00:00.000Z",
+    "updatedAt": "2024-03-10T14:30:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0d3",
+    "name": "Bob Chen",
+    "email": "bob@acmecorp.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "createdAt": "2024-03-02T10:15:00.000Z",
+    "updatedAt": "2024-03-11T08:45:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0e2",
+    "name": "Sandra Lee",
+    "email": "sandra@globexsolutions.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "createdAt": "2024-02-14T08:00:00.000Z",
+    "updatedAt": "2024-03-01T12:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0e3",
+    "name": "James Patel",
+    "email": "james@globexsolutions.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "createdAt": "2024-02-20T09:30:00.000Z",
+    "updatedAt": "2024-03-05T11:15:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0e4",
+    "name": "Nina Rossi",
+    "email": "nina@globexsolutions.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "createdAt": "2024-03-01T07:45:00.000Z",
+    "updatedAt": "2024-03-12T10:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0f2",
+    "name": "Peter Gibbons",
+    "email": "peter@initech.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "createdAt": "2024-01-10T10:00:00.000Z",
+    "updatedAt": "2024-02-28T09:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a2",
+    "name": "Victor Reyes",
+    "email": "victor@umbrella-tech.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "createdAt": "2024-01-15T11:00:00.000Z",
+    "updatedAt": "2024-03-08T13:30:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a3",
+    "name": "Laura Kim",
+    "email": "laura@umbrella-tech.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "createdAt": "2024-01-20T14:00:00.000Z",
+    "updatedAt": "2024-03-09T15:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a4",
+    "name": "Marcus Webb",
+    "email": "marcus@umbrella-tech.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "createdAt": "2024-02-01T08:30:00.000Z",
+    "updatedAt": "2024-03-10T09:45:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0a5",
+    "name": "Diane Moreau",
+    "email": "diane@umbrella-tech.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "createdAt": "2024-02-10T10:00:00.000Z",
+    "updatedAt": "2024-03-11T16:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0b2",
+    "name": "Tony Stark",
+    "email": "tony@starkindustries.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "createdAt": "2024-01-05T09:00:00.000Z",
+    "updatedAt": "2024-03-12T18:00:00.000Z"
+  },
+  {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0b3",
+    "name": "Pepper Potts",
+    "email": "pepper@starkindustries.com",
+    "password": "password123",
+    "role": "user",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "createdAt": "2024-01-06T09:30:00.000Z",
+    "updatedAt": "2024-03-13T17:00:00.000Z"
+  },
+    {
+    "_id": "64a1f2b3c4e5d6f7a8b9c0b4",
+    "name": "Manel Colominas",
+    "email": "manel@starkindustries.com",
+    "password": "password123",
+    "role": "admin",
+    "organization": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "createdAt": "2024-01-06T09:30:00.000Z",
+    "updatedAt": "2024-03-13T17:00:00.000Z"
+  }
+]
+
+
+
+==================== src/library/logger.ts ====================
+
+import chalk from 'chalk';
+
+export default class logger {
+    public static log = (args: any) => this.info(args);
+    public static info = (args: any) => console.log(chalk.blue(`[${new Date().toLocaleString()}] [INFO]`), typeof args === 'string' ? chalk.blueBright(args) : args);
+    public static warning = (args: any) => console.log(chalk.yellow(`[${new Date().toLocaleString()}] [WARN]`), typeof args === 'string' ? chalk.yellowBright(args) : args);
+    public static error = (args: any) => console.log(chalk.red(`[${new Date().toLocaleString()}] [ERROR]`), typeof args === 'string' ? chalk.redBright(args) : args);
+}
+
+
+
+
+==================== src/middleware/auth.middleware.ts ====================
+
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { IJwtPayload } from '../models/JWTPayload';
+import { config } from '../config/config';
+
+export async function verifyToken(req: Request, res: Response, next: NextFunction) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token)
+        return res.status(403).json({ message: "No token provided" });
+
+    try {
+        const decoded = jwt.verify(token, config.jwt.accessSecret) as IJwtPayload;
+
+        if (decoded.type !== 'access')
+            return res.status(401).json({ message: "Invalid token type - Access token required" });
+
+        (req as any).userId = decoded.id;
+        (req as any).userRole = decoded.role;
+        (req as any).organization = decoded.organization;
+        res.locals.UserId = decoded.id;
+
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+}
+
+export async function isOwner(req: Request, res: Response, next: NextFunction) {
+    try {
+        const userIdRequest = (req as any).userId;
+        const userId = req.params.userId;
+
+        if (userId !== userIdRequest)
+            return res.status(403).json({ message: "Not Owner" });
+
+        next();
+    } 
+    catch (error) {
+        return res.status(500).json({ message: error });
+    }
+}
+
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+    try {
+        const role = (req as any).userRole;
+        if (role !== 'admin')
+            return res.status(403).json({ message: 'Admin access required' });
+        next();
+    }
+    catch (error) {
+        return res.status(500).json({ message: error });
+    }
+}
+
+export async function verifyRefreshToken(req: Request, res: Response, next: NextFunction) {
+    const refreshToken = req.cookies?.[config.cookies.refreshName];
+
+    if (!refreshToken)
+        return res.status(403).json({ message: "No refresh token provided" });
+
+    try {
+        const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret) as IJwtPayload;
+
+        if (decoded.type !== 'refresh')
+            return res.status(401).json({ message: "Invalid token type - Refresh token required" });
+
+        (req as any).userId = decoded.id;
+        (req as any).userRole = decoded.role;
+        res.locals.UserId = decoded.id;
+
+        next();
+    } 
+    catch (error) {
+        return res.status(401).json({ message: "Invalid refresh token" });
+    }
+}
+
+export function requireRole(...roles: string[]) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const role = (req as any).userRole;
+        if (!role || !roles.includes(role)) {
+            return res.status(403).json({ message: `Access denied. Required role: ${roles.join(' or ')}` });
+        }
+        next();
+    };
+}
+
+export function isOwnerOrAdminOrg(req: Request, res: Response, next: NextFunction) {
+    const userIdFromToken = (req as any).userId;
+    const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization; // organization from token
+    const userIdParam = req.params.userId;
+    const orgIdParam = req.params.organizationId; // if route includes orgId
+
+    if (userIdFromToken === userIdParam) {
+        return next();
+    }
+
+    if (userRole === 'admin' && userOrg && orgIdParam && String(userOrg) === String(orgIdParam)) {
+        return next();
+    }
+
+    return res.status(403).json({ message: "Forbidden: not owner or org admin" });
+}
+
+export function isOrgMember(req: Request, res: Response, next: NextFunction) {
+    const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization;
+    const orgId = req.params.organizationId;
+
+    if (userRole === 'admin') {
+        return next();
+    }
+
+    if (userOrg && String(userOrg) === String(orgId)) {
+        return next();
+    }
+
+    return res.status(403).json({
+        message: 'Forbidden: not a member of this organization'
+    });
+}
+
+export function isOrgAdmin(req: Request, res: Response, next: NextFunction) {
+    const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization;
+    const orgId = req.params.organizationId;
+
+    if (userRole !== 'admin') {
+        return res.status(403).json({ message: 'Admin role required' });
+    }
+
+    if (!userOrg || String(userOrg) !== String(orgId)) {
+        return res.status(403).json({
+            message: 'Forbidden: admin from another organization'
+        });
+    }
+    next();
+}
+
+
+
+==================== src/middleware/joi.middleware.ts ====================
+
+import Joi, { ObjectSchema } from 'joi';
+import { NextFunction, Request, Response } from 'express';
+import { IOrganization } from '../models/organization.model';
+import { IUser } from '../models/user.model';
+
+export const ValidateJoi = (schema: ObjectSchema) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await schema.validateAsync(req.body);
+            next();
+        } catch (error) {
+            return res.status(422).json({ error });
+        }
+    };
+};
+
+export const Schemas = {
+    organization: {
+        create: Joi.object<IOrganization>({
+            name: Joi.string().required()
+        }),
+        update: Joi.object<IOrganization>({
+            name: Joi.string().required()
+        })
+    },
+    user: {
+        create: Joi.object<IUser>({
+            name: Joi.string().required(),
+            email: Joi.string().email().required(),
+            password: Joi.string().min(6).required(),
+            role: Joi.string().valid('user', 'admin').required(),
+            organization: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required()
+        }),
+        update: Joi.object<IUser>({
+            name: Joi.string().optional(),
+            email: Joi.string().email().optional(),
+            password: Joi.string().min(6).optional(),
+            organization: Joi.string().regex(/^[0-9a-fA-F]{24}$/).optional()
+        })
+    }
+};
+
+
+
+==================== src/models/AuthRequest.ts ====================
+
+import { Request } from 'express';
+
+export interface AuthRequest extends Request {
+    userId: string;
+    userRole: string;
+}
+
+
+
+==================== src/models/JWTPayload.ts ====================
+
+// https://nozzlegear.com/blog/implementing-a-jwt-auth-system-with-typescript-and-node
+
+export interface IJwtPayload {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+    organization: string;
+    type: 'access' | 'refresh';
+}
+
+
+
+==================== src/models/organization.model.ts ====================
+
+import mongoose, { Document, model, Schema, Types } from 'mongoose';
+import { IUser } from './user.model';
+
+export interface IOrganization {
+    _id: Types.ObjectId;
+    name: string;
+    users: Types.ObjectId[];
+}
+
+const OrganizationSchema: Schema = new Schema(
+    {
+        name: { type: String, required: true },
+        users: [{ type: Schema.Types.ObjectId, ref: 'User' }]
+    },
+    {
+        versionKey: false
+    }
+);
+
+export const OrganizationModel = model<IOrganization>('Organization', OrganizationSchema);
+
+
+
+
+==================== src/models/user.model.ts ====================
+
+import mongoose, { model, Schema, Types } from 'mongoose';
+
+export type UserRole = 'user' | 'admin';
+
+export interface IUser {
+    _id: Types.ObjectId;
+    name: string;
+    email: string;
+    password: string;
+    role: UserRole;
+    organization: mongoose.Types.ObjectId | string;
+}
+
+const UserSchema: Schema = new Schema(
+    {
+        name:         { type: String, required: true },
+        email:        { type: String, required: true, unique: true },
+        password:     { type: String, required: true },
+        role:         { type: String, enum: ['user', 'admin'], default: 'user' },
+        organization: { type: Schema.Types.ObjectId, required: true, ref: 'Organization' }
+    },
+    {
+        timestamps: true,
+        versionKey: false
+    }
+);
+
+export const UserModel = model<IUser>('User', UserSchema);
+
+
+
+==================== src/routes/auth.route.ts ====================
+
+import { Router } from "express";
+const router = Router();
+
+import * as authCtrl from "../controllers/auth.controller";
+import { verifyRefreshToken, verifyToken } from "../middleware/auth.middleware";
+
+/**
+ * @swagger
+ * /auth/signup:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email, password, organization]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               organization:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Missing fields or email already in use
+ */
+router.post("/signup", authCtrl.signup);
+
+/**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login with email and password
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "manel@starkindustries.com"
+ *               password:
+ *                 type: string
+ *                 example: "password123"
+ *     responses:
+ *       200:
+ *         description: Login successful, returns accessToken
+ *       401:
+ *         description: Invalid credentials
+ */
+router.post("/login", authCtrl.login);
+
+/**
+ * @swagger
+ * /auth/refresh:
+ *   post:
+ *     summary: Refresh access token using refresh token cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Returns new accessToken
+ *       403:
+ *         description: No refresh token provided
+ */
+router.post("/refresh", verifyRefreshToken, authCtrl.refresh);
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout and clear refresh token cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
+router.post("/logout", authCtrl.logout);
+
+/**
+ * @swagger
+ * /auth/me:
+ *   get:
+ *     summary: Get current authenticated user
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Returns user data
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.get("/me", verifyToken, authCtrl.getMe);
+
+export default router;
+
+
+
+==================== src/routes/organization.route.ts ====================
+
+import express from 'express';
+import controller from '../controllers/organization.controller';
+import { verifyToken, isOwner, isOwnerOrAdminOrg, isAdmin, isOrgMember, isOrgAdmin } from '../middleware/auth.middleware'; 
+import { Schemas, ValidateJoi } from '../middleware/joi.middleware';
+
+const router = express.Router();
+
+/**
+ * @openapi
+ * tags:
+ *   - name: Organizations
+ *     description: CRUD endpoints for organizations
+ *
+ * components:
+ *   schemas:
+ *     Organization:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: MongoDB ObjectId
+ *           example: "65f1c2a1b2c3d4e5f6789013"
+ *         name:
+ *           type: string
+ *           example: "EA Company"
+ *         users:
+ *           type: array
+ *           items:
+ *             type: string
+ *           description: Array of user ObjectIds
+ *           example: ["65f1c2a1b2c3d4e5f6789012"]
+ *     OrganizationCreateUpdate:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "EA Company"
+ */
+
+/**
+ * @openapi
+ * /organizations:
+ *   post:
+ *     summary: Creates an organization
+ *     tags: [Organizations]
+ *     security:
+ *       - bearerAuth: [] 
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OrganizationCreateUpdate'
+ *     responses:
+ *       201:
+ *         description: Created
+ *       422:
+ *         description: Validation failed (Joi)
+ */
+router.post('/', [verifyToken, isAdmin], ValidateJoi(Schemas.organization.create), controller.createOrganization);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}/full:
+ *   get:
+ *     summary: Gets a single organization with populated users
+ *     security:
+ *       - bearerAuth: [] 
+ *     tags: [Organizations]
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization's ObjectId
+ *     responses:
+ *       200:
+ *         description: Returns the organization with populated users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Organization'
+ *       404:
+ *         description: Organization not found
+ */
+router.get('/:organizationId/full', [verifyToken, isOrgMember], controller.getOrganizationWithUsers);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}:
+ *   get:
+ *     summary: Gets an organization by ID
+ *     tags: [Organizations]
+ *     security:
+ *       - bearerAuth: [] 
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization's ObjectId
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Organization'
+ *       404:
+ *         description: Not found
+ */
+router.get('/:organizationId', [verifyToken, isOrgMember], controller.readOrganization);
+
+/**
+ * @openapi
+ * /organizations:
+ *   get:
+ *     summary: Lists all organizations
+ *     tags: [Organizations]
+ *     security:
+ *       - bearerAuth: [] 
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Organization'
+ */
+router.get('/', [verifyToken], controller.readAll);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}:
+ *   put:
+ *     summary: Updates an organization by ID
+ *     tags: [Organizations]
+ *     security:
+ *       - bearerAuth: [] 
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization's ObjectId
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/OrganizationCreateUpdate'
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Organization'
+ *       404:
+ *         description: Not found
+ *       422:
+ *         description: Validation failed (Joi)
+ */
+router.put('/:organizationId', [verifyToken, isOrgAdmin], ValidateJoi(Schemas.organization.update), controller.updateOrganization);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}:
+ *   delete:
+ *     summary: Deletes an organization by ID
+ *     security:
+ *       - bearerAuth: [] 
+ *     tags: [Organizations]
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization's ObjectId
+ *     responses:
+ *       200:
+ *         description: Successfully deleted
+ *       404:
+ *         description: Not found
+ */
+router.delete('/:organizationId', [verifyToken, isOrgAdmin] , controller.deleteOrganization);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}/users/{userId}:
+ *   delete:
+ *     summary: Removes a user from an organization
+ *     security:
+ *       - bearerAuth: [] 
+ *     tags: [Organizations]
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The organization's ObjectId
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user's ObjectId
+ *     responses:
+ *       200:
+ *         description: User removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Organization'
+ *       404:
+ *         description: Organization not found
+ */
+router.delete('/:organizationId/users/:userId', [verifyToken, isOwnerOrAdminOrg] , controller.removeUserFromOrganization);
+
+export default router;
+
+
+
+
+==================== src/routes/user.route.ts ====================
+
+import { Router } from 'express';
+import controller from '../controllers/user.controller';
+import { verifyToken, isOwner, requireRole, isOwnerOrAdminOrg } from '../middleware/auth.middleware';
+import { ValidateJoi, Schemas } from '../middleware/joi.middleware';
+
+const router = Router();
+
+/**
+ * @openapi
+ * tags:
+ *   - name: Users
+ *     description: CRUD endpoints for users
+ *
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789012"
+ *         name:
+ *           type: string
+ *           example: "Alice"
+ *         email:
+ *           type: string
+ *           example: "alice@example.com"
+ *         organization:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789013"
+ *     UserCreateUpdate:
+ *       type: object
+ *       required:
+ *         - name
+ *         - email
+ *         - password
+ *         - organization
+ *       properties:
+ *         name:
+ *           type: string
+ *           example: "Alice"
+ *         email:
+ *           type: string
+ *           example: "alice@example.com"
+ *         password:
+ *           type: string
+ *           example: "password123"
+ *         organization:
+ *           type: string
+ *           example: "65f1c2a1b2c3d4e5f6789013"
+ */
+
+/**
+ * @openapi
+ * /users:
+ *   post:
+ *     summary: Creates a user
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserCreateUpdate'
+ *     responses:
+ *       201:
+ *         description: Created
+ *       400:
+ *         description: Email already in use
+ *       422:
+ *         description: Validation failed
+ */
+router.post('/', [verifyToken, requireRole('admin')], ValidateJoi(Schemas.user.create), controller.createUser );
+
+/**
+ * @openapi
+ * /users:
+ *   get:
+ *     summary: Lists all users
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get('/', [verifyToken, requireRole('admin')], controller.readAll);
+
+/**
+ * @openapi
+ * /users/{userId}:
+ *   get:
+ *     summary: Gets a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *       404:
+ *         description: Not found
+ */
+router.get('/:userId', [verifyToken, isOwnerOrAdminOrg], controller.readUser);
+
+/**
+ * @openapi
+ * /users/{userId}:
+ *   put:
+ *     summary: Updates a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserCreateUpdate'
+ *     responses:
+ *       200:
+ *         description: Updated
+ *       403:
+ *         description: Not owner
+ *       404:
+ *         description: Not found
+ *       422:
+ *         description: Validation failed
+ */
+router.put('/:userId', [verifyToken, isOwnerOrAdminOrg], ValidateJoi(Schemas.user.update),  controller.updateUser );
+
+/**
+ * @openapi
+ * /users/{userId}:
+ *   delete:
+ *     summary: Deletes a user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ *       403:
+ *         description: Not owner
+ *       404:
+ *         description: Not found
+ */
+router.delete('/:userId', [verifyToken, isOwnerOrAdminOrg], controller.deleteUser );
+
+export default router;
+
+
+
+==================== src/server.ts ====================
+
+import express, { Express } from 'express';
+import http from 'http';
+import mongoose from 'mongoose';
+import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import cookieParser from 'cookie-parser';
+import logger from './library/logger';
+
+import { config } from './config/config';
+import { swaggerSpec } from './swagger';
+import { insertData } from './utils/dataSeeder.util';
+
+import authRoutes from './routes/auth.route';
+import userRoutes from './routes/user.route';
+import organizationRoutes from './routes/organization.route';
+
+const app: Express = express(); // Explicitly type as Express
+
+/** Connect to Mongo */
+mongoose
+    .connect(config.mongo.url, { retryWrites: true, w: 'majority' })
+    .then(() => {
+        insertData();
+        StartServer();
+    })
+    .catch((error) => {
+        logger.error('Failed to connect to MongoDB:');
+        logger.error(error);
+        process.exit(1);
+    });
+
+const StartServer = () => {
+    // Explicitly type the middleware functions
+    app.use(express.json() as express.RequestHandler);
+    app.use(express.urlencoded({ extended: true }) as express.RequestHandler);
+    //app.use(cors() as express.RequestHandler);
+    app.use(cors({
+        origin: process.env.CLIENT_URL || 'http://localhost:4200',
+        credentials: true
+    }));
+    app.use(cookieParser());
+    
+    // Rest of your middleware...
+    
+    //app.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+    app.use('/api', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+    app.use('/auth', authRoutes);
+    app.use('/users', userRoutes);
+    app.use('/organizations', organizationRoutes);
+    
+    app.get('/ping', (req, res) => res.status(200).json({ message: 'pong' }));
+    
+    app.use((req, res) => {
+        res.status(404).json({ message: 'Not found' });
+    });
+    
+    http.createServer(app).listen(config.server.port, () => {
+        logger.info(`Server running on port ${config.server.port}`);
+    });
+};
+
+
+
+==================== src/services/auth.service.ts ====================
+
+import mongoose from 'mongoose';
+import { UserModel } from '../models/user.model';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.util';
+
+export const validateUserCredentials = async (email: string, password: string) => {
+    const user = await UserModel.findOne({ email });
+    if (!user) return null;
+    if (user.password !== password) return null;
+    return user;
+};
+
+export const getTokens = (user: any) => {
+    const accessToken = generateAccessToken(
+        String(user._id),
+        user.name,
+        user.email,
+        user.role,
+        user.organization as mongoose.Types.ObjectId
+    );
+    const refreshToken = generateRefreshToken(
+        String(user._id),
+        user.name,
+        user.email,
+        user.role,
+        user.organization as mongoose.Types.ObjectId
+    );
+    return { accessToken, refreshToken };
+};
+
+export const refreshUserSession = async (incomingRefreshToken: string) => {
+    const payload = verifyRefreshToken(incomingRefreshToken);
+    const user = await UserModel.findById(payload.id);
+    if (!user) throw new Error('User not found');
+    return getTokens(user);
+};
+
+
+
+==================== src/services/organization.service.ts ====================
+
+import mongoose from 'mongoose';
+import { OrganizationModel, IOrganization } from '../models/organization.model';
+import { UserModel } from '../models/user.model';
+
+
+const createOrganization = (data: Partial<IOrganization>): Promise<IOrganization> => {
+    const organization = new OrganizationModel({
+        _id: new mongoose.Types.ObjectId(),
+        users: [],
+        ...data
+    });
+    return organization.save();
+};
+
+const getOrganization = async (organizationId: string): Promise<IOrganization | null> => {
+    return await OrganizationModel.findById(organizationId);
+};
+
+const getAllOrganizations = async (): Promise<IOrganization[]> => {
+    return await OrganizationModel.find();
+};
+
+const updateOrganization = async (organizationId: string, data: Partial<IOrganization>): Promise<IOrganization | null> => {
+    const organization = await OrganizationModel.findById(organizationId);
+    if (organization) {
+        organization.set(data);
+        return organization.save();
+    }
+    return null;
+};
+
+const deleteOrganization = async (organizationId: string): Promise<IOrganization | null> => {
+    // Check if organization has users
+    const organization = await OrganizationModel.findById(organizationId);
+    if (!organization) return null;
+    
+    const userCount = await UserModel.countDocuments({ organization: organizationId });
+    
+    if (userCount > 0) {
+        throw new Error(`Cannot delete organization with ${userCount} users. Reassign or delete users first.`);
+    }
+    
+    return await OrganizationModel.findByIdAndDelete(organizationId);
+};
+
+const getOrganizationWithUsers = async (organizationId: string): Promise<IOrganization | null> => {
+    return await OrganizationModel.findById(organizationId).populate('users', '-organization -password -createdAt -updatedAt').lean();
+};
+
+const removeUserFromOrganization = async (organizationId: string, userId: string): Promise<IOrganization | null> => {
+    const organization = await OrganizationModel.findById(organizationId);
+    if (!organization) return null;
+
+    const isMember = organization.users.some((id) => id.toString() === userId);
+    if (!isMember) throw new Error('USER_NOT_IN_ORG');
+
+    return await OrganizationModel.findByIdAndUpdate(
+        organizationId,
+        { $pull: { users: userId } },
+        { new: true }
+    );
+};
+
+export default { createOrganization, getOrganization, getAllOrganizations, updateOrganization, deleteOrganization, getOrganizationWithUsers, removeUserFromOrganization };
+
+
+
+
+==================== src/services/user.service.ts ====================
+
+import mongoose from 'mongoose';
+import { UserModel, IUser } from '../models/user.model';
+import { OrganizationModel } from '../models/organization.model';
+
+const createUser = async (data: Partial<IUser>): Promise<IUser> => {
+    const user = new UserModel({
+        _id: new mongoose.Types.ObjectId(),
+        ...data
+    });
+    const savedUser = await user.save();
+
+    // Afegir l'usuari a l'organització
+    await OrganizationModel.findByIdAndUpdate(
+        savedUser.organization,
+        { $addToSet: { users: savedUser._id } }
+    );
+
+    return savedUser;
+};
+
+const getUser = async (userId: string): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId).populate('organization', 'name');
+    return user;
+};
+
+const getAllUsers = async (): Promise<IUser[]> => {
+    const users = await UserModel.find().populate('organization', 'name');
+    return users;
+};
+
+const updateUser = async (userId: string, data: Partial<IUser>): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId);
+    if (user) {
+        // Si l'organització canvia, actualitzar les llistes d'usuaris a les organitzacions
+        if (data.organization && data.organization.toString() !== user.organization.toString()) {
+            // Eliminar de l'antiga organització
+            await OrganizationModel.findByIdAndUpdate(user.organization, {
+                $pull: { users: user._id }
+            });
+
+            // Afegir a la nova organització
+            await OrganizationModel.findByIdAndUpdate(data.organization, {
+                $addToSet: { users: user._id }
+            });
+        }
+
+        user.set(data);
+        return await user.save();
+    }
+    return null;
+};
+
+// user.service.ts - update deleteUser function
+const deleteUser = async (userId: string): Promise<IUser | null> => {
+    const user = await UserModel.findById(userId);
+    if (user) {
+        // Remove user from organization's users array
+        await OrganizationModel.findByIdAndUpdate(user.organization, {
+            $pull: { users: user._id }
+        });
+    }
+    return await UserModel.findByIdAndDelete(userId);
+};
+
+export default { createUser, getUser, getAllUsers, updateUser, deleteUser };
+
+
+
+
+==================== src/swagger.ts ====================
+
+import swaggerJSDoc, { Options } from 'swagger-jsdoc';
+import path from 'path';
+import { config } from './config/config';
+
+const options: Options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'API',
+            version: '1.0.0',
+            description: 'REST API for Organizations and Users',
+        },
+        servers: [
+            {
+                url: `http://localhost:${config.server.port}`,
+            },
+        ],
+        components: {
+            securitySchemes: {
+                bearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                }
+            }
+        }
+    },
+    apis: [path.join(__dirname, 'routes', '*.js')],
+};
+
+export const swaggerSpec = swaggerJSDoc(options);
+
+
+
+==================== src/utils/dataSeeder.util.ts ====================
+
+import mongoose from 'mongoose';
+import fs from 'fs';
+import path from 'path';
+
+// Import all models
+import { OrganizationModel } from '../models/organization.model';
+import { UserModel } from '../models/user.model';
+
+const modelMap: { [key: string]: mongoose.Model<any> } = {
+    'organizations.json': OrganizationModel,
+    'users.json': UserModel
+};
+
+export const insertData = async () => {
+    try {
+        // Try multiple locations for the data directory
+        const possiblePaths = [
+            path.join(__dirname, '../data'),           // build/data
+            path.join(process.cwd(), 'src/data'),      // src/data (from root)
+            path.join(__dirname, '../../src/data')     // src/data (relative to build/utils)
+        ];
+
+        let dataDir = '';
+        for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+                dataDir = p;
+                break;
+            }
+        }
+
+        if (!dataDir) {
+            return;
+        }
+
+        const files = fs.readdirSync(dataDir);
+        // Delete all data from collections
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const model = modelMap[file];
+                if (model) {
+                    await model.deleteMany({});
+                }
+            }
+        }
+        for (const file of files) {
+            if (file.endsWith('.json')) {
+                const model = modelMap[file];
+                if (model) {
+                    const filePath = path.join(dataDir, file);
+                    const fileContent = fs.readFileSync(filePath, 'utf-8');
+                    const data = JSON.parse(fileContent);
+                    await model.insertMany(data);
+                }
+            }
+        }
+    }
+    catch (error) {
+    }
+};
+
+
+
+
+==================== src/utils/jwt.util.ts ====================
+
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
+import { config } from "../config/config";
+import { IJwtPayload } from "../models/JWTPayload";
+
+export const generateAccessToken = (userId: string, name: string, email: string, role: string, organization: mongoose.Types.ObjectId | string) => {
+    const payload: IJwtPayload = { id: userId, name, email, role, organization: String(organization), type: 'access' };
+    return jwt.sign(
+        payload,
+        config.jwt.accessSecret,
+        { expiresIn: config.jwt.accessExpiresIn as jwt.SignOptions["expiresIn"] }
+    );
+};
+
+export const generateRefreshToken = (userId: string, name: string, email: string, role: string, organization: mongoose.Types.ObjectId | string) => {
+    const payload: IJwtPayload = { id: userId, name, email, role, organization: String(organization), type: 'refresh' };
+    return jwt.sign(
+        payload,
+        config.jwt.refreshSecret,
+        { expiresIn: config.jwt.refreshExpiresIn as jwt.SignOptions["expiresIn"] }
+    );
+};
+
+export const verifyAccessToken = (token: string) => {
+    return jwt.verify(token, config.jwt.accessSecret) as IJwtPayload;
+};
+
+export const verifyRefreshToken = (token: string) => {
+    return jwt.verify(token, config.jwt.refreshSecret) as IJwtPayload;
+};
+

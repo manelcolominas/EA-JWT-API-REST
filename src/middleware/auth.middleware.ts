@@ -77,12 +77,6 @@ export async function verifyRefreshToken(req: Request, res: Response, next: Next
     }
 }
 
-/**
- * Middleware factory — restricts a route to users with one of the allowed roles.
- * Always place AFTER verifyToken, which sets req.userRole.
- *
- * Usage:  router.delete('/:id', [verifyToken, requireRole('admin')], controller.delete)
- */
 export function requireRole(...roles: string[]) {
     return (req: Request, res: Response, next: NextFunction) => {
         const role = (req as any).userRole;
@@ -93,20 +87,22 @@ export function requireRole(...roles: string[]) {
     };
 }
 
-export function isOwnerOrAdmin(req: Request, res: Response, next: NextFunction) {
+export function isOwnerOrAdminOrg(req: Request, res: Response, next: NextFunction) {
     const userIdFromToken = (req as any).userId;
     const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization; // organization from token
     const userIdParam = req.params.userId;
-
-    if (userRole === 'admin') {
-        return next();
-    }
+    const orgIdParam = req.params.organizationId; // if route includes orgId
 
     if (userIdFromToken === userIdParam) {
         return next();
     }
 
-    return res.status(403).json({ message: "Forbidden: not owner or admin" });
+    if (userRole === 'admin' && userOrg && orgIdParam && String(userOrg) === String(orgIdParam)) {
+        return next();
+    }
+
+    return res.status(403).json({ message: "Forbidden: not owner or org admin" });
 }
 
 export function isOrgMember(req: Request, res: Response, next: NextFunction) {
@@ -125,4 +121,21 @@ export function isOrgMember(req: Request, res: Response, next: NextFunction) {
     return res.status(403).json({
         message: 'Forbidden: not a member of this organization'
     });
+}
+
+export function isOrgAdmin(req: Request, res: Response, next: NextFunction) {
+    const userRole = (req as any).userRole;
+    const userOrg = (req as any).organization;
+    const orgId = req.params.organizationId;
+
+    if (userRole !== 'admin') {
+        return res.status(403).json({ message: 'Admin role required' });
+    }
+
+    if (!userOrg || String(userOrg) !== String(orgId)) {
+        return res.status(403).json({
+            message: 'Forbidden: admin from another organization'
+        });
+    }
+    next();
 }

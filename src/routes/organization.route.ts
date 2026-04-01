@@ -1,6 +1,6 @@
 import express from 'express';
 import controller from '../controllers/organization.controller';
-import { verifyToken, isOwner, isAdmin, isOrgMember } from '../middleware/auth.middleware'; 
+import { verifyToken, isOwner, isOwnerOrAdminOrg, isAdmin, isOrgMember, isOrgAdmin } from '../middleware/auth.middleware'; 
 import { Schemas, ValidateJoi } from '../middleware/joi.middleware';
 
 const router = express.Router();
@@ -168,7 +168,7 @@ router.get('/', [verifyToken], controller.readAll);
  *       422:
  *         description: Validation failed (Joi)
  */
-router.put('/:organizationId', [verifyToken, isOwner], ValidateJoi(Schemas.organization.update), controller.updateOrganization);
+router.put('/:organizationId', [verifyToken, isOrgAdmin], ValidateJoi(Schemas.organization.update), controller.updateOrganization);
 
 /**
  * @openapi
@@ -191,7 +191,7 @@ router.put('/:organizationId', [verifyToken, isOwner], ValidateJoi(Schemas.organ
  *       404:
  *         description: Not found
  */
-router.delete('/:organizationId', [verifyToken, isOwner] , controller.deleteOrganization);
+router.delete('/:organizationId', [verifyToken, isOrgAdmin] , controller.deleteOrganization);
 
 /**
  * @openapi
@@ -224,6 +224,6 @@ router.delete('/:organizationId', [verifyToken, isOwner] , controller.deleteOrga
  *       404:
  *         description: Organization not found
  */
-router.delete('/:organizationId/users/:userId', [verifyToken, isOwner] , controller.removeUserFromOrganization);
+router.delete('/:organizationId/users/:userId', [verifyToken, isOwnerOrAdminOrg] , controller.removeUserFromOrganization);
 
 export default router;
