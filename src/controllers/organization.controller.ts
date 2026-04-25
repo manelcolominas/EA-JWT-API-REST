@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import OrganizationService from '../services/organization.service';
+import taskService from '../services/task.service'; // Import the task service
 
 const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -79,4 +80,22 @@ const removeUserFromOrganization = async (req: Request, res: Response, next: Nex
     }
 };
 
-export default { createOrganization, readOrganization, readAll, updateOrganization, deleteOrganization, getOrganizationWithUsers, removeUserFromOrganization };
+const getTasksByOrganization = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const tasks = await taskService.getTasksByOrganization(req.params.organizationId);
+        return res.status(200).json(tasks);
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+};
+
+export default { 
+    createOrganization, 
+    readOrganization, 
+    readAll, 
+    updateOrganization, 
+    deleteOrganization, 
+    getOrganizationWithUsers, 
+    removeUserFromOrganization,
+    getTasksByOrganization // Export the new function
+};

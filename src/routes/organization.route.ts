@@ -1,6 +1,6 @@
 import express from 'express';
 import controller from '../controllers/organization.controller';
-import { verifyToken, isOwner, isOwnerOrAdminOrg, isAdmin, isOrgMember, isOrgAdmin } from '../middleware/auth.middleware'; 
+import { verifyToken, isOwnerOrAdminOrg, isAdmin, isOrgMember, isOrgAdmin } from '../middleware/auth.middleware'; 
 import { Schemas, ValidateJoi } from '../middleware/joi.middleware';
 
 const router = express.Router();
@@ -10,33 +10,6 @@ const router = express.Router();
  * tags:
  *   - name: Organizations
  *     description: CRUD endpoints for organizations
- *
- * components:
- *   schemas:
- *     Organization:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *           description: MongoDB ObjectId
- *           example: "65f1c2a1b2c3d4e5f6789013"
- *         name:
- *           type: string
- *           example: "EA Company"
- *         users:
- *           type: array
- *           items:
- *             type: string
- *           description: Array of user ObjectIds
- *           example: ["65f1c2a1b2c3d4e5f6789012"]
- *     OrganizationCreateUpdate:
- *       type: object
- *       required:
- *         - name
- *       properties:
- *         name:
- *           type: string
- *           example: "EA Company"
  */
 
 /**
@@ -56,10 +29,28 @@ const router = express.Router();
  *     responses:
  *       201:
  *         description: Created
- *       422:
- *         description: Validation failed (Joi)
  */
 router.post('/', [verifyToken, isAdmin], ValidateJoi(Schemas.organization.create), controller.createOrganization);
+
+/**
+ * @openapi
+ * /organizations/{organizationId}/tasks:
+ *   get:
+ *     summary: Gets all tasks for an organization
+ *     tags: [Organizations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: organizationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: OK
+ */
+router.get('/:organizationId/tasks', [verifyToken, isOrgMember], controller.getTasksByOrganization);
 
 /**
  * @openapi
@@ -75,16 +66,9 @@ router.post('/', [verifyToken, isAdmin], ValidateJoi(Schemas.organization.create
  *         required: true
  *         schema:
  *           type: string
- *         description: The organization's ObjectId
  *     responses:
  *       200:
- *         description: Returns the organization with populated users
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Organization'
- *       404:
- *         description: Organization not found
+ *         description: OK
  */
 router.get('/:organizationId/full', [verifyToken, isOrgMember], controller.getOrganizationWithUsers);
 
@@ -102,16 +86,9 @@ router.get('/:organizationId/full', [verifyToken, isOrgMember], controller.getOr
  *         required: true
  *         schema:
  *           type: string
- *         description: The organization's ObjectId
  *     responses:
  *       200:
  *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Organization'
- *       404:
- *         description: Not found
  */
 router.get('/:organizationId', [verifyToken, isOrgMember], controller.readOrganization);
 
@@ -126,12 +103,6 @@ router.get('/:organizationId', [verifyToken, isOrgMember], controller.readOrgani
  *     responses:
  *       200:
  *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Organization'
  */
 router.get('/', [verifyToken], controller.readAll);
 
@@ -149,24 +120,9 @@ router.get('/', [verifyToken], controller.readAll);
  *         required: true
  *         schema:
  *           type: string
- *         description: The organization's ObjectId
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/OrganizationCreateUpdate'
  *     responses:
  *       200:
  *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Organization'
- *       404:
- *         description: Not found
- *       422:
- *         description: Validation failed (Joi)
  */
 router.put('/:organizationId', [verifyToken, isOrgAdmin], ValidateJoi(Schemas.organization.update), controller.updateOrganization);
 
@@ -184,12 +140,9 @@ router.put('/:organizationId', [verifyToken, isOrgAdmin], ValidateJoi(Schemas.or
  *         required: true
  *         schema:
  *           type: string
- *         description: The organization's ObjectId
  *     responses:
  *       200:
- *         description: Successfully deleted
- *       404:
- *         description: Not found
+ *         description: OK
  */
 router.delete('/:organizationId', [verifyToken, isOrgAdmin] , controller.deleteOrganization);
 
@@ -207,22 +160,14 @@ router.delete('/:organizationId', [verifyToken, isOrgAdmin] , controller.deleteO
  *         required: true
  *         schema:
  *           type: string
- *         description: The organization's ObjectId
  *       - in: path
  *         name: userId
  *         required: true
  *         schema:
  *           type: string
- *         description: The user's ObjectId
  *     responses:
  *       200:
- *         description: User removed successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Organization'
- *       404:
- *         description: Organization not found
+ *         description: OK
  */
 router.delete('/:organizationId/users/:userId', [verifyToken, isOwnerOrAdminOrg] , controller.removeUserFromOrganization);
 

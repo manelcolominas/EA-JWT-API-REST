@@ -1,0 +1,296 @@
+[
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0d101",
+    "title": "Set up CI/CD pipeline",
+    "state": "DONE",
+    "startDate": "2024-03-01T09:00:00.000Z",
+    "endDate": "2024-03-07T18:00:00.000Z",
+    "description": "Configure GitHub Actions to automate build, test and deployment workflows.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0d2", "64a1f2b3c4e5d6f7a8b9c0d3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0d102",
+    "title": "Redesign landing page",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-10T09:00:00.000Z",
+    "endDate": "2024-03-25T18:00:00.000Z",
+    "description": "Update the public landing page with new branding, copy and responsive layout.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0d3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0d103",
+    "title": "Migrate database to MongoDB Atlas",
+    "state": "DONE",
+    "startDate": "2024-02-15T08:00:00.000Z",
+    "endDate": "2024-02-28T18:00:00.000Z",
+    "description": "Move the existing local MongoDB instance to a managed Atlas cluster with proper indexing.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0d2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0d104",
+    "title": "Write unit tests for auth module",
+    "state": "TO DO",
+    "startDate": "2024-03-20T09:00:00.000Z",
+    "endDate": "2024-04-01T18:00:00.000Z",
+    "description": "Achieve at least 80% test coverage on the authentication service and middleware.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0d2", "64a1f2b3c4e5d6f7a8b9c0d3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0d105",
+    "title": "Conduct Q1 performance review",
+    "state": "TO DO",
+    "startDate": "2024-03-28T09:00:00.000Z",
+    "endDate": "2024-04-05T18:00:00.000Z",
+    "description": "Evaluate team KPIs for Q1 and prepare individual feedback reports.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0d1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0d2"]
+  },
+
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e101",
+    "title": "Implement role-based access control",
+    "state": "DONE",
+    "startDate": "2024-02-10T09:00:00.000Z",
+    "endDate": "2024-02-22T18:00:00.000Z",
+    "description": "Add admin/user role guards to all API endpoints and update middleware accordingly.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e2", "64a1f2b3c4e5d6f7a8b9c0e3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e102",
+    "title": "Build reporting dashboard",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-05T09:00:00.000Z",
+    "endDate": "2024-03-30T18:00:00.000Z",
+    "description": "Create an analytics dashboard showing task completion rates and team activity.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e3", "64a1f2b3c4e5d6f7a8b9c0e4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e103",
+    "title": "Integrate Stripe payment gateway",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-12T09:00:00.000Z",
+    "endDate": "2024-04-05T18:00:00.000Z",
+    "description": "Add subscription billing using Stripe Checkout and webhook handling for payment events.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e104",
+    "title": "Set up Sentry error monitoring",
+    "state": "DONE",
+    "startDate": "2024-02-25T09:00:00.000Z",
+    "endDate": "2024-03-02T18:00:00.000Z",
+    "description": "Integrate Sentry in both the backend and mobile app for real-time error tracking.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e2", "64a1f2b3c4e5d6f7a8b9c0e3", "64a1f2b3c4e5d6f7a8b9c0e4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e105",
+    "title": "Document REST API with Swagger",
+    "state": "TO DO",
+    "startDate": "2024-03-25T09:00:00.000Z",
+    "endDate": "2024-04-10T18:00:00.000Z",
+    "description": "Add JSDoc Swagger annotations to all routes and publish the OpenAPI spec.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0e106",
+    "title": "Conduct user acceptance testing",
+    "state": "TO DO",
+    "startDate": "2024-04-01T09:00:00.000Z",
+    "endDate": "2024-04-15T18:00:00.000Z",
+    "description": "Run UAT sessions with 10 external users and collect structured feedback on core flows.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0e1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0e2", "64a1f2b3c4e5d6f7a8b9c0e4"]
+  },
+
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0f101",
+    "title": "Audit existing codebase",
+    "state": "DONE",
+    "startDate": "2024-01-15T09:00:00.000Z",
+    "endDate": "2024-01-30T18:00:00.000Z",
+    "description": "Review all modules for dead code, security issues and outdated dependencies.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0f2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0f102",
+    "title": "Migrate to TypeScript",
+    "state": "IN PROGRESS",
+    "startDate": "2024-02-01T09:00:00.000Z",
+    "endDate": "2024-03-15T18:00:00.000Z",
+    "description": "Convert the existing JavaScript backend to TypeScript with strict mode enabled.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0f2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0f103",
+    "title": "Set up Docker environment",
+    "state": "DONE",
+    "startDate": "2024-01-20T09:00:00.000Z",
+    "endDate": "2024-01-27T18:00:00.000Z",
+    "description": "Containerize the app and database with Docker Compose for consistent local development.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0f2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0f104",
+    "title": "Write onboarding documentation",
+    "state": "TO DO",
+    "startDate": "2024-03-20T09:00:00.000Z",
+    "endDate": "2024-04-01T18:00:00.000Z",
+    "description": "Create a developer onboarding guide covering setup, conventions and deployment steps.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0f1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0f2"]
+  },
+
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a101",
+    "title": "Design system architecture",
+    "state": "DONE",
+    "startDate": "2024-01-16T09:00:00.000Z",
+    "endDate": "2024-01-31T18:00:00.000Z",
+    "description": "Define microservices boundaries, data flow and infrastructure for the new platform.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a2", "64a1f2b3c4e5d6f7a8b9c0a4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a102",
+    "title": "Implement push notifications",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-01T09:00:00.000Z",
+    "endDate": "2024-03-22T18:00:00.000Z",
+    "description": "Integrate Firebase Cloud Messaging for task assignment and deadline reminder notifications.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a3", "64a1f2b3c4e5d6f7a8b9c0a5"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a103",
+    "title": "Set up Redis caching layer",
+    "state": "DONE",
+    "startDate": "2024-02-05T09:00:00.000Z",
+    "endDate": "2024-02-15T18:00:00.000Z",
+    "description": "Cache frequent DB queries using Redis to reduce latency on organization and task endpoints.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a104",
+    "title": "Localize app to Spanish and French",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-10T09:00:00.000Z",
+    "endDate": "2024-04-05T18:00:00.000Z",
+    "description": "Add i18n support and translate all UI strings to Spanish (es) and French (fr).",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a3", "64a1f2b3c4e5d6f7a8b9c0a5"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a105",
+    "title": "Penetration testing",
+    "state": "TO DO",
+    "startDate": "2024-04-05T09:00:00.000Z",
+    "endDate": "2024-04-20T18:00:00.000Z",
+    "description": "Engage an external security firm to perform a full penetration test on the API and mobile app.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a2", "64a1f2b3c4e5d6f7a8b9c0a4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a106",
+    "title": "Optimize mobile app startup time",
+    "state": "TO DO",
+    "startDate": "2024-03-25T09:00:00.000Z",
+    "endDate": "2024-04-08T18:00:00.000Z",
+    "description": "Profile and reduce cold start time on Flutter app to under 2 seconds on mid-range devices.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0a107",
+    "title": "Plan Q2 product roadmap",
+    "state": "DONE",
+    "startDate": "2024-02-20T09:00:00.000Z",
+    "endDate": "2024-03-01T18:00:00.000Z",
+    "description": "Define Q2 milestones, prioritize backlog items and align with stakeholders.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0a1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0a2", "64a1f2b3c4e5d6f7a8b9c0a4", "64a1f2b3c4e5d6f7a8b9c0a5"]
+  },
+
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b101",
+    "title": "Build arc reactor simulation module",
+    "state": "DONE",
+    "startDate": "2024-01-10T09:00:00.000Z",
+    "endDate": "2024-02-10T18:00:00.000Z",
+    "description": "Develop the core physics simulation engine for arc reactor energy output modelling.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b2", "64a1f2b3c4e5d6f7a8b9c0b4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b102",
+    "title": "Upgrade JARVIS NLP model",
+    "state": "IN PROGRESS",
+    "startDate": "2024-02-15T09:00:00.000Z",
+    "endDate": "2024-04-01T18:00:00.000Z",
+    "description": "Fine-tune the language model powering JARVIS on domain-specific engineering datasets.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b2"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b103",
+    "title": "Procurement report for Q1",
+    "state": "DONE",
+    "startDate": "2024-03-01T09:00:00.000Z",
+    "endDate": "2024-03-10T18:00:00.000Z",
+    "description": "Compile and submit the Q1 procurement and vendor spending report to the board.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b3", "64a1f2b3c4e5d6f7a8b9c0b4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b104",
+    "title": "Iron Man suit telemetry API",
+    "state": "IN PROGRESS",
+    "startDate": "2024-03-05T09:00:00.000Z",
+    "endDate": "2024-04-10T18:00:00.000Z",
+    "description": "Expose real-time suit diagnostics over a secure WebSocket API with sub-100ms latency.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b2", "64a1f2b3c4e5d6f7a8b9c0b4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b105",
+    "title": "Legal compliance review",
+    "state": "TO DO",
+    "startDate": "2024-04-01T09:00:00.000Z",
+    "endDate": "2024-04-20T18:00:00.000Z",
+    "description": "Review all contracts and IP agreements with external partners for Q2 compliance.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b3"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b106",
+    "title": "Onboard new engineering interns",
+    "state": "TO DO",
+    "startDate": "2024-04-08T09:00:00.000Z",
+    "endDate": "2024-04-12T18:00:00.000Z",
+    "description": "Prepare workstations, access credentials and a week-long onboarding plan for 3 new interns.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b3", "64a1f2b3c4e5d6f7a8b9c0b4"]
+  },
+  {
+    "_id": "65b2a3c4d5e6f7a8b9c0b107",
+    "title": "Deploy staging environment",
+    "state": "DONE",
+    "startDate": "2024-02-01T09:00:00.000Z",
+    "endDate": "2024-02-07T18:00:00.000Z",
+    "description": "Provision a staging server mirroring production for pre-release QA testing.",
+    "organizationId": "64a1f2b3c4e5d6f7a8b9c0b1",
+    "users": ["64a1f2b3c4e5d6f7a8b9c0b4"]
+  }
+]

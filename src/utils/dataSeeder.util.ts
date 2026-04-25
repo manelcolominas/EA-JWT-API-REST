@@ -5,10 +5,13 @@ import path from 'path';
 // Import all models
 import { OrganizationModel } from '../models/organization.model';
 import { UserModel } from '../models/user.model';
+import { TaskModel } from '../models/task.model';
+
 
 const modelMap: { [key: string]: mongoose.Model<any> } = {
     'organizations.json': OrganizationModel,
-    'users.json': UserModel
+    'users.json': UserModel,
+    'tasks.json': TaskModel
 };
 
 export const insertData = async () => {

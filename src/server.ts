@@ -13,6 +13,7 @@ import { insertData } from './utils/dataSeeder.util';
 import authRoutes from './routes/auth.route';
 import userRoutes from './routes/user.route';
 import organizationRoutes from './routes/organization.route';
+import taskRoutes from './routes/task.route';
 
 const app: Express = express(); // Explicitly type as Express
 
@@ -48,6 +49,7 @@ const StartServer = () => {
     app.use('/auth', authRoutes);
     app.use('/users', userRoutes);
     app.use('/organizations', organizationRoutes);
+    app.use('/tasks', taskRoutes);
     
     app.get('/ping', (req, res) => res.status(200).json({ message: 'pong' }));
     
